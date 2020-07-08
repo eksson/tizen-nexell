@@ -31,4 +31,5 @@ libnxgstmeta_la_LIBTOOLFLAGS = --tag=disable-static
 noinst_HEADERS =
 
 nxgstmetaincludedir = ${includedir}
-nxgstmetainclude_HEADERS = gstmmvideobuffermeta.h
+nxgstmetainclude_HEADERS = gstmmvideobuffermeta.h \
+	mm_types.h
