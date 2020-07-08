@@ -192,7 +192,9 @@ extern "C"
     int32_t frameRateNum;       /* Frame Rate Numerator */
     int32_t frameRateDen;       /* Frame Rate Denominator (-1 : no information) */
 
-    int32_t imgFourCC;          /* FourCC according to decoded image type */                // need delete
+#ifdef TIZEN_FEATURE_ARTIK530
+    int32_t imgFourCC;          /* FourCC according to decoded image type */
+#endif
     int32_t thumbnailWidth;     /* Width of thumbnail image */
     int32_t thumbnailHeight;    /* Height of thumbnail image */
 
