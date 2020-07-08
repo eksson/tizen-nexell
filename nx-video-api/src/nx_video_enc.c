@@ -64,7 +64,8 @@ V4l2EncOpen (void)
   bool found = false;
   struct stat s;
   FILE *stream_fd;
-  char filename[64], name[64];
+  char filename[64];
+  char name[64];
   int i = 0;
 
   while (!found && (i <= VIDEODEV_MINOR_MAX)) {
@@ -208,7 +209,7 @@ NX_V4l2EncInit (NX_V4L2ENC_HANDLE hEnc, NX_V4L2ENC_PARA * pEncPara)
 
     fmt.type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
     fmt.fmt.pix_mp.pixelformat = hEnc->codecType;
-    fmt.fmt.pix_mp.plane_fmt[0].sizeimage = inWidth * inHeight * 3 / 4;
+    fmt.fmt.pix_mp.plane_fmt[0].sizeimage = inWidth * inHeight * 3 / 2;
 
     if (ioctl (hEnc->fd, VIDIOC_S_FMT, &fmt) != 0) {
       _E ("failed to ioctl: VIDIOC_S_FMT(Stream)\n");
@@ -227,6 +228,13 @@ NX_V4l2EncInit (NX_V4L2ENC_HANDLE hEnc, NX_V4L2ENC_PARA * pEncPara)
     fmt.fmt.pix_mp.width = inWidth;
     fmt.fmt.pix_mp.height = inHeight;
     fmt.fmt.pix_mp.num_planes = pEncPara->imgPlaneNum;
+
+		for (i=0 ; i<(int32_t)pEncPara->imgPlaneNum ; i++) {
+			fmt.fmt.pix_mp.plane_fmt[i].sizeimage =
+          pEncPara->pImage->size[i];
+			fmt.fmt.pix_mp.plane_fmt[i].bytesperline =
+          pEncPara->pImage->stride[i];
+		}
 
     if (ioctl (hEnc->fd, VIDIOC_S_FMT, &fmt) != 0) {
       _E ("Failed to s_fmt : YUV \n");
@@ -283,6 +291,7 @@ NX_V4l2EncInit (NX_V4L2ENC_HANDLE hEnc, NX_V4L2ENC_PARA * pEncPara)
 
           ext_ctrls.count += 2;
         }
+
         //ext_ctrl[15].id = V4L2_CID_MPEG_VIDEO_H264_PROFILE;
         //ext_ctrl[15].value = ;
       } else if (hEnc->codecType == V4L2_PIX_FMT_MPEG4) {
@@ -373,10 +382,10 @@ NX_V4l2EncInit (NX_V4L2ENC_HANDLE hEnc, NX_V4L2ENC_PARA * pEncPara)
     /* Allocate Output Buffer */
     for (i = 0; i < bufferCount; i++) {
       hEnc->hBitStream[i] =
-          NX_AllocateMemory (inWidth * inHeight * 3 / 4, 4096);
+          NX_AllocateMemory (inWidth * inHeight * 3 / 2, 4096);
       if (hEnc->hBitStream[i] == NULL) {
         _E ("Failed to allocate stream buffer(%d, %d)\n", i,
-            inWidth * inHeight * 3 / 4);
+            inWidth * inHeight * 3 / 2);
         return -1;
       }
 
