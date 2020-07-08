@@ -117,6 +117,7 @@ extern "C"
     uint32_t imgFormat;         /* Fourcc of Input Image */
     uint32_t imgBufferNum;      /* Number of Input Image Buffer */
     uint32_t imgPlaneNum;       /* Number of Input Image Plane */
+	  NX_VID_MEMORY_INFO*	pImage;	/* Frame Buffer of Input Image */
 
     /* for JPEG Specific Parameter */
     int32_t rotAngle;
@@ -175,6 +176,10 @@ extern "C"
 
     /* for JPEG Decoder */
     int32_t thumbnailMode;      /* 0 : jpeg mode, 1 : thumbnail mode */
+
+  	/* for Video Out Reorder */
+	  /* Used when there is no B-Frame. */
+	  int32_t disableVideoOutReorder;	/* 0 : EnableVideoOutReorder, 1 : DisableVideoOutReorder */
   } NX_V4L2DEC_SEQ_IN;
 
   typedef struct tNX_V4L2DEC_SEQ_OUT
@@ -187,7 +192,7 @@ extern "C"
     int32_t frameRateNum;       /* Frame Rate Numerator */
     int32_t frameRateDen;       /* Frame Rate Denominator (-1 : no information) */
 
-    int32_t imgFourCC;          /* FourCC according to decoded image type */
+    int32_t imgFourCC;          /* FourCC according to decoded image type */                // need delete
     int32_t thumbnailWidth;     /* Width of thumbnail image */
     int32_t thumbnailHeight;    /* Height of thumbnail image */
 
@@ -217,10 +222,13 @@ extern "C"
     int32_t dispIdx;            /* Display Index */
 
     uint32_t usedByte;
+  
     int32_t picType[2];         /* Picture Type */
     uint64_t timeStamp[2];      /* Time stamp */
     int32_t interlace[2];
     int32_t outFrmReliable_0_100[2];    /* Percentage of MB's are reliable ranging from 0[all damage] to 100 [all clear] */
+
+  	uint32_t remainByte;
   } NX_V4L2DEC_OUT;
 
 
