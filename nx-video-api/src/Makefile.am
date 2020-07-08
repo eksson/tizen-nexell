@@ -10,7 +10,7 @@ libnx_video_api_ladir = ${libdir}
 libnx_video_api_la_LDFLAGS = -L${libdir} -ldrm -ltbm $(DLOG_LIBS)
 
 libnx_video_api_la_SOURCES = \
-	nx_video_alloc.c	\
+	nx_video_alloc_drm.c	\
 	nx_video_enc.c		\
 	nx_video_dec.c
 
