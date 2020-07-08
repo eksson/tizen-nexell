@@ -30,7 +30,8 @@ extern "C"
     int32_t size;               //      Allocate Size
     int32_t align;              //      Start Address Align
     void *pBuffer;              //      Virtual Address Pointer
-    uint32_t reserved;
+//	  void *pReserved;	          //	    For debugging or future user
+    uint32_t reserved;                                  //  need delete ------------------------
   } NX_MEMORY_INFO, *NX_MEMORY_HANDLE;
 
 
@@ -52,10 +53,12 @@ extern "C"
     int32_t size[NX_MAX_PLANES];        //      Each plane's size.
     int32_t stride[NX_MAX_PLANES];      //      Each plane's stride.
     void *pBuffer[NX_MAX_PLANES];       //      virtual address.
-    uint32_t reserved[NX_MAX_PLANES];   //      for debugging or future user.
 #ifdef TIZEN_FEATURE_ARTIK530
+    uint32_t reserved[NX_MAX_PLANES];   //      for debugging or future user.
     void *bo[NX_MAX_PLANES];   // tbm bo
     tbm_surface_h surface;
+#else
+	  void *pReserved[NX_MAX_PLANES];	    //	    for debugging or future user
 #endif
   } NX_VID_MEMORY_INFO, *NX_VID_MEMORY_HANDLE;
 
@@ -64,8 +67,8 @@ extern "C"
   void NX_FreeMemory (NX_MEMORY_INFO * pMem);
 
 //      Video Specific Allocator Wrapper
-  NX_VID_MEMORY_INFO *NX_AllocateVideoMemory (void *bufmgr, int width, int height,
-      int32_t planes, uint32_t format, int align);
+  NX_VID_MEMORY_INFO *NX_AllocateVideoMemory (void *bufmgr, int width,
+      int height, int32_t planes, uint32_t format, int align);
   void NX_FreeVideoMemory (NX_VID_MEMORY_INFO * pMem);
 
   int NX_MapMemory (NX_MEMORY_INFO * pMem);
