@@ -34,7 +34,7 @@
 /*----------------------------------------------------------------------------*/
 #define NX_V4L2_DEC_NAME		"nx-vpu-dec"
 #define VIDEODEV_MINOR_MAX		63
-#define STREAM_BUFFER_NUM		1
+#define STREAM_BUFFER_NUM		  1
 
 
 struct NX_V4L2DEC_INFO
@@ -59,12 +59,11 @@ struct NX_V4L2DEC_INFO
   int32_t planesNum;
 
   int32_t frameCnt;
+ 
+	int32_t iRemainStrmSize;
 
-  /* For MPEG4 */
-  int vopTimeBits;
-
-  /* For VC1 */
-  int32_t iInterlace;
+	int vopTimeBits;		/* For MPEG4 */
+	int32_t iInterlace;		/* For VC1 */
 
 #ifdef TIZEN_FEATURE_ARTIK530
   /* buffer manager */
@@ -86,7 +85,8 @@ V4l2DecOpen (void)
   bool found = false;
   struct stat s;
   FILE *stream_fd;
-  char filename[64], name[64];
+  char filename[64];
+  char name[64];
   int32_t i = 0;
 
   while (!found && (i <= VIDEODEV_MINOR_MAX)) {
@@ -130,7 +130,6 @@ V4l2DecOpen (void)
   return fd;
 }
 
-
 #ifndef MKTAG
 #define MKTAG(a,b,c,d) (a | (b << 8) | (c << 16) | (d << 24))
 #endif
@@ -162,7 +161,6 @@ V4l2DecOpen (void)
 	*_p++ = (uint8_t)((_var) >> 8); \
 	*_p++ = (uint8_t)((_var) >> 0);
 #endif
-
 
 typedef struct
 {
@@ -337,113 +335,32 @@ GetSequenceHeader (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_SEQ_IN * pSeqIn)
         else if ((pbySrc[2] == 1) && (pbySrc[6] > 51))
           pbyDst[6] = 51;
         break;
-      } else
+      } else {
         return -1;
+      }
 
     case V4L2_PIX_FMT_DIV3:
-      if (pSeqIn->seqSize == 0) {
-        if ((pSeqIn->width > 0) && (pSeqIn->height > 0)) {
-          PUT_LE32 (pbyDst, MKTAG ('C', 'N', 'M', 'V'));
-          PUT_LE16 (pbyDst, 0x00);      /* version */
-          PUT_LE16 (pbyDst, 0x20);      /* length of header in bytes */
-          PUT_LE32 (pbyDst, MKTAG ('D', 'I', 'V', '3'));        /* codec FourCC */
-          PUT_LE16 (pbyDst, pSeqIn->width);
-          PUT_LE16 (pbyDst, pSeqIn->height);
-          PUT_LE32 (pbyDst, 0); /* frame rate */
-          PUT_LE32 (pbyDst, 0); /* time scale(?) */
-          PUT_LE32 (pbyDst, 0); /* number of frames in file */
-          PUT_LE32 (pbyDst, 0); /* unused */
-          iSize += 32;
-        } else
-          return -1;
-      } else {
-        PUT_BE32 (pbyDst, pSeqIn->seqSize);
-        iSize += 4;
-        memcpy (pbyDst, pbyDst, pSeqIn->seqSize);
-      }
-      break;
-
     case V4L2_PIX_FMT_WMV9:
-      if ((pSeqIn->seqSize > 0) && (pSeqIn->width > 0) && (pSeqIn->height > 0)) {
-#ifdef RCV_V2
-        PUT_LE32 (pbyDst, (0xC5 << 24) | 0x00); /* version */
-#else
-        /* RCV_V1 */
-        PUT_LE32 (pbyDst, (0x85 << 24) | 0x00);
-#endif
-
-        PUT_LE32 (pbyDst, pSeqIn->seqSize);
-        memcpy (pbyDst, pbySrc, pSeqIn->seqSize);
-        pbyDst += pSeqIn->seqSize;
-        PUT_LE32 (pbyDst, pSeqIn->height);
-        PUT_LE32 (pbyDst, pSeqIn->width);
-        iSize += 16;
-#ifdef RCV_V2
-        PUT_LE32 (pbyDst, 12);
-        /* STRUCT_B_FRIST (LEVEL:3|CBR:1:RESERVE:4:HRD_BUFFER|24) */
-        PUT_LE32 (pbyDst, 2 << 29 | 1 << 28 | 0x80 << 24 | 1 << 0);
-        PUT_LE32 (pbyDst, 0);   /* bitrate */
-        PUT_LE32 (pbyDst, 0);   /* framerate */
-        iSize += 16;
-#endif
-        break;
-      } else
-        return -1;
-
     case V4L2_PIX_FMT_RV8:
     case V4L2_PIX_FMT_RV9:
-      if ((pSeqIn->seqSize > 0) && (pSeqIn->width > 0) && (pSeqIn->height > 0)) {
-        iSize += 26;
-
-        PUT_BE32 (pbyDst, iSize);       /* Length */
-        PUT_LE32 (pbyDst, MKTAG ('V', 'I', 'D', 'O'));  /* MOFTag */
-
-        if (hDec->codecType == V4L2_PIX_FMT_RV8) {
-          PUT_LE32 (pbyDst, MKTAG ('R', 'V', '3', '0'));
-        } else {
-          PUT_LE32 (pbyDst, MKTAG ('R', 'V', '4', '0'));
-        }
-
-        PUT_BE16 (pbyDst, pSeqIn->width);
-        PUT_BE16 (pbyDst, pSeqIn->height);
-        PUT_BE16 (pbyDst, 0x0c);        /* BitCount */
-        PUT_BE16 (pbyDst, 0x00);        /* PadWidth */
-        PUT_BE16 (pbyDst, 0x00);        /* PadHeight */
-        PUT_LE32 (pbyDst, 0);   /* framerate */
-        memcpy (pbyDst, pbySrc, pSeqIn->seqSize);
-        break;
-      } else
-        return -1;
-
     case V4L2_PIX_FMT_VP8:
-      if ((pSeqIn->seqSize > 0) && (pSeqIn->width > 0) && (pSeqIn->height > 0)) {
-        PUT_LE32 (pbyDst, MKTAG ('D', 'K', 'I', 'F'));  /* signature 'DKIF' */
-        PUT_LE16 (pbyDst, 0x00);        /* version */
-        PUT_LE16 (pbyDst, 0x20);        /* length of header in bytes */
-        PUT_LE32 (pbyDst, MKTAG ('V', 'P', '8', '0'));  /* codec FourCC */
-        PUT_LE16 (pbyDst, pSeqIn->width);       /* width */
-        PUT_LE16 (pbyDst, pSeqIn->height);      /* height */
-        PUT_LE32 (pbyDst, 0);   /* frame rate */
-        PUT_LE32 (pbyDst, 0);   /* time scale(?) */
-        PUT_LE32 (pbyDst, 0);   /* number of frames in file */
-        PUT_LE32 (pbyDst, 0);   /* unused */
-        iSize += 32;
-
-        PUT_LE32 (pbyDst, pSeqIn->seqSize);
-        PUT_LE32 (pbyDst, 0);
-        PUT_LE32 (pbyDst, 0);
-        memcpy (pbyDst, pbySrc, pSeqIn->seqSize);
-        iSize += 12;
-        break;
-      } else
-        return -1;
-
+      memcpy(pbyDst, pbySrc, pSeqIn->seqSize);
+      break;
     case V4L2_PIX_FMT_XVID:
     case V4L2_PIX_FMT_DIVX:
     case V4L2_PIX_FMT_DIV4:
     case V4L2_PIX_FMT_DIV5:
     case V4L2_PIX_FMT_DIV6:
     case V4L2_PIX_FMT_MPEG4:
+    	if (V4L2_PIX_FMT_DIV5 == hDec->codecType) {
+			  if (pSeqIn->seqSize >= 4) {
+				  // sequence start code
+				  if( (pbySrc[0] != 0x00) || (pbySrc[1] != 0x00) ||
+					    (pbySrc[2] != 0x01) || (pbySrc[3] != 0xb0) ) {
+					  return -1;
+				  }
+			  }
+		  }
       Mp4DecParseVideoCfg (hDec, pbySrc, pSeqIn->seqSize);
 
     default:
@@ -497,61 +414,12 @@ GetFrameStream (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_IN * pDecIn, int32_t * idx)
       break;
 
     case V4L2_PIX_FMT_WMV9:
-      PUT_LE32 (pbyDst, iSize | 0);     /* Key Frame = 0x80000000 */
-      iSize += 4;
-
-#ifdef RCV_V2
-      PUT_LE32 (pbyDst, 0);
-      iSize += 4;
-#endif
-
-      memcpy (pbyDst, pbySrc, pDecIn->strmSize);
-      break;
-
     case V4L2_PIX_FMT_RV8:
     case V4L2_PIX_FMT_RV9:
-    {
-      int32_t cSlice, nSlice;
-      int32_t i, val, offset;
-
-      cSlice = pbySrc[0] + 1;
-      nSlice = iSize - 1 - (cSlice * 8);
-
-      PUT_BE32 (pbyDst, nSlice);
-      PUT_LE32 (pbyDst, 0);
-      PUT_BE16 (pbyDst, 0);     /* frame number */
-      PUT_BE16 (pbyDst, 0x02);  /* Flags */
-      PUT_BE32 (pbyDst, 0x00);  /* LastPacket */
-      PUT_BE32 (pbyDst, cSlice);        /* NumSegments */
-
-      offset = 1;
-      for (i = 0; i < cSlice; i++) {
-        val =
-            (pbySrc[offset + 3] << 24) | (pbySrc[offset +
-                2] << 16) | (pbySrc[offset + 1] << 8) | pbySrc[offset];
-        PUT_BE32 (pbyDst, val); /* isValid */
-        offset += 4;
-        val =
-            (pbySrc[offset + 3] << 24) | (pbySrc[offset +
-                2] << 16) | (pbySrc[offset + 1] << 8) | pbySrc[offset];
-        PUT_BE32 (pbyDst, val); /* Offset */
-        offset += 4;
-      }
-
-      memcpy (pbyDst, pbySrc + (1 + (cSlice * 8)), nSlice);
-      iSize = 20 + (cSlice * 8) + nSlice;
-    }
-      break;
-
     case V4L2_PIX_FMT_DIV3:
     case V4L2_PIX_FMT_VP8:
-      PUT_LE32 (pbyDst, iSize);
-      PUT_LE32 (pbyDst, 0);
-      PUT_LE32 (pbyDst, 0);
-      memcpy (pbyDst, pbySrc, iSize);
-      iSize += 12;
+      memcpy(pbyDst, pbySrc, iSize);
       break;
-
     case V4L2_PIX_FMT_XVID:
     case V4L2_PIX_FMT_DIVX:
     case V4L2_PIX_FMT_DIV4:
@@ -616,7 +484,8 @@ ERROR_EXIT:
 int32_t
 NX_V4l2DecClose (NX_V4L2DEC_HANDLE hDec)
 {
-  int32_t ret = 0, i;
+  int32_t ret = 0;
+  int32_t i;
 
   if (NULL == hDec) {
     _E ("Fail, Invalid Handle.\n");
@@ -652,6 +521,7 @@ NX_V4l2DecClose (NX_V4L2DEC_HANDLE hDec)
       }
     }
   }
+
 #ifdef TIZEN_FEATURE_ARTIK530
     if (hDec->bufmgr)
       tbm_bufmgr_deinit (hDec->bufmgr);
@@ -677,7 +547,8 @@ NX_V4l2DecParseVideoCfg (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_SEQ_IN * pSeqIn,
     return -1;
   }
 
-  hDec->seqDataSize = (pSeqIn->seqSize < 1024) ? (pSeqIn->seqSize) : (1024);
+  hDec->seqDataSize = (pSeqIn->seqSize < 1024) ?
+                      pSeqIn->seqSize : sizeof(hDec->pSeqData);
   memcpy (hDec->pSeqData, pSeqIn->seqBuf, hDec->seqDataSize);
 
   /* Set Stream Formet */
@@ -708,7 +579,8 @@ NX_V4l2DecParseVideoCfg (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_SEQ_IN * pSeqIn,
   /* Malloc Stream Buffer */
   {
     struct v4l2_requestbuffers req;
-    int32_t i, buffCnt = STREAM_BUFFER_NUM;
+    int32_t buffCnt = STREAM_BUFFER_NUM;
+    int32_t i;
 
     /* IOCTL : VIDIOC_REQBUFS For Input Stream */
     memset (&req, 0, sizeof (req));
@@ -750,6 +622,18 @@ NX_V4l2DecParseVideoCfg (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_SEQ_IN * pSeqIn,
         return -1;
       }
     }
+
+    if (pSeqIn->disableVideoOutReorder) {
+			struct v4l2_control ctrl;
+
+			ctrl.id = V4L2_CID_DISABLE_VIDEO_OUT_REORDER;
+			ctrl.value = pSeqIn->disableVideoOutReorder;
+
+			if (ioctl(hDec->fd, VIDIOC_S_CTRL, &ctrl) != 0) {
+				_E ("failed to ioctl: Set DisableVideoOutReorder\n");
+				return -1;
+			}
+		}
   }
 
   /* Parser Sequence Header */
@@ -809,6 +693,7 @@ NX_V4l2DecParseVideoCfg (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_SEQ_IN * pSeqIn,
       pSeqOut->interlace = FIELD_INTERLACED;
 
     hDec->iInterlace = pSeqOut->interlace;
+    hDec->iRemainStrmSize -= buf.bytesused;
   }
 
   /* Get Image Information */
@@ -824,9 +709,7 @@ NX_V4l2DecParseVideoCfg (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_SEQ_IN * pSeqIn,
       return -1;
     }
 
-#ifdef TIZEN_FEATURE_ARTIK530
     pSeqOut->imgFourCC = fmt.fmt.pix_mp.pixelformat;
-#endif
     pSeqOut->width = fmt.fmt.pix_mp.width;
     pSeqOut->height = fmt.fmt.pix_mp.height;
     pSeqOut->minBuffers = fmt.fmt.pix_mp.reserved[1];
@@ -853,16 +736,35 @@ NX_V4l2DecParseVideoCfg (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_SEQ_IN * pSeqIn,
 int32_t
 NX_V4l2DecInit (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_SEQ_IN * pSeqIn)
 {
+	struct v4l2_format fmt;
+	struct v4l2_requestbuffers req;
+	struct v4l2_plane planes[3];
+	struct v4l2_buffer buf;
+	enum v4l2_buf_type type;
+	int32_t imgBuffCnt;
+  int32_t i;
+  int32_t j;
+
   /* Set Output Image */
   {
-    struct v4l2_format fmt;
-
     memset (&fmt, 0, sizeof (fmt));
     fmt.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
     fmt.fmt.pix_mp.pixelformat = pSeqIn->imgFormat;
     fmt.fmt.pix_mp.width = pSeqIn->width;
     fmt.fmt.pix_mp.height = pSeqIn->height;
     fmt.fmt.pix_mp.num_planes = pSeqIn->imgPlaneNum;
+
+#ifdef TIZEN_FEATURE_ARTIK530
+#else
+    // This code is make a error in Tizen,
+    // but, it's on nexell branch at github of NEXELLCORP
+  	for (i=0 ; i<(int32_t)pSeqIn->imgPlaneNum ; i++) {
+	  	fmt.fmt.pix_mp.plane_fmt[i].sizeimage =
+          hDec->hImage[0]->size[i];
+  		fmt.fmt.pix_mp.plane_fmt[i].bytesperline =
+          hDec->hImage[0]->stride[i];
+  	}
+#endif
 
     if (ioctl (hDec->fd, VIDIOC_S_FMT, &fmt) != 0) {
       _E ("failed to ioctl: VIDIOC_S_FMT(Output Yuv)\n");
@@ -874,21 +776,17 @@ NX_V4l2DecInit (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_SEQ_IN * pSeqIn)
 
   /* Malloc Output Image */
   {
-    struct v4l2_requestbuffers req;
-    struct v4l2_plane planes[3];
-    struct v4l2_buffer buf;
-    enum v4l2_buf_type type;
-    int32_t imgBuffCnt, i, j;
-
     /* Calculate Buffer Number */
     if (pSeqIn->pMemHandle == NULL) {
       hDec->useExternalFrameBuffer = false;
-      imgBuffCnt = hDec->numFrameBuffers + pSeqIn->numBuffers;
+      imgBuffCnt = pSeqIn->numBuffers;
     } else {
       hDec->useExternalFrameBuffer = true;
-      if (2 > pSeqIn->numBuffers - hDec->numFrameBuffers)
+      if (2 > pSeqIn->numBuffers - hDec->numFrameBuffers) {
         _D ("External Buffer too small.(min=%d, buffers=%d)\n",
             hDec->numFrameBuffers, pSeqIn->numBuffers);
+        return -1;
+      }
 
       imgBuffCnt = pSeqIn->numBuffers;
     }
@@ -919,14 +817,16 @@ NX_V4l2DecInit (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_SEQ_IN * pSeqIn)
     return -1;
   }
 #endif
-    /* Allocate Buffer(Internal or External) */
+
+    /* Allocate Buffer */
     for (i = 0; i < imgBuffCnt; i++) {
       if (true == hDec->useExternalFrameBuffer) {
         hDec->hImage[i] = pSeqIn->pMemHandle[i];
       } else {
         hDec->hImage[i] =
-            NX_AllocateVideoMemory (hDec->bufmgr, pSeqIn->width, pSeqIn->height,
-            pSeqIn->imgPlaneNum, pSeqIn->imgFormat, 4096);
+            NX_AllocateVideoMemory (hDec->bufmgr, pSeqIn->width,
+              pSeqIn->height, pSeqIn->imgPlaneNum, pSeqIn->imgFormat,
+              4096);
         if (hDec->hImage[i] == NULL) {
           _E ("Failed to allocate image buffer(%d, %d, %d)\n", i,
               pSeqIn->width, pSeqIn->height);
@@ -938,7 +838,10 @@ NX_V4l2DecInit (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_SEQ_IN * pSeqIn)
           return -1;
         }
       }
+    }
 
+    /* Allocate Buffer(Internal or External) */
+    for (i = 0; i < imgBuffCnt; i++) {
       buf.index = i;
 
       for (j = 0; j < (int32_t) pSeqIn->imgPlaneNum; j++) {
@@ -973,12 +876,26 @@ NX_V4l2DecDecodeFrame (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_IN * pDecIn,
   int32_t iStrmSize;
   int32_t frameType;
 
+  uint32_t iDecodedUsed = 0;
+  uint32_t iDisplayUsed = 0;
+
   if (NULL == hDec) {
     _E ("Fail, Invalid Handle.\n");
     return -1;
   }
 
+#ifdef TIZEN_FEATURE_ARTIK530
+#else
+  // This code is make a error in Tizen,
+  // but, it's on nexell branch at github of NEXELLCORP
+	memset (pDecOut, 0x00, sizeof(NX_V4L2DEC_OUT));
+#endif
+	pDecOut->decIdx = -1;
+	pDecOut->dispIdx = -1;
+
   iStrmSize = GetFrameStream (hDec, pDecIn, &idx);
+
+	hDec->iRemainStrmSize += iStrmSize;
 
   /* Queue Input Buffer */
   memset (&buf, 0, sizeof (buf));
@@ -1060,7 +977,7 @@ NX_V4l2DecDecodeFrame (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_IN * pDecIn,
     pDecOut->hImg = *hDec->hImage[buf.index];
     pDecOut->timeStamp[DISPLAY_FRAME] =
         ((uint64_t) buf.timestamp.tv_sec) * 1000 + buf.timestamp.tv_usec / 1000;
-    pDecOut->outFrmReliable_0_100[DISPLAY_FRAME] = buf.reserved;
+    iDisplayUsed = buf.bytesused;
     frameType = buf.flags;
 
     if (frameType & V4L2_BUF_FLAG_KEYFRAME)
@@ -1079,6 +996,11 @@ NX_V4l2DecDecodeFrame (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_IN * pDecIn,
     else if (buf.field == V4L2_FIELD_SEQ_BT)
       pDecOut->interlace[DISPLAY_FRAME] = BOTTOM_FIELD_FIRST;
   }
+
+	pDecOut->usedByte = iDecodedUsed ? iDecodedUsed : iDisplayUsed;
+
+	hDec->iRemainStrmSize -= pDecOut->usedByte;
+	pDecOut->remainByte = hDec->iRemainStrmSize;
 
   hDec->frameCnt++;
 
@@ -1182,7 +1104,8 @@ NX_V4l2DecFlush (NX_V4L2DEC_HANDLE hDec)
   {
     struct v4l2_plane planes[3];
     struct v4l2_buffer buf;
-    int32_t i, j;
+    int32_t i;
+    int32_t j;
 
     memset (&buf, 0, sizeof (buf));
     buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
