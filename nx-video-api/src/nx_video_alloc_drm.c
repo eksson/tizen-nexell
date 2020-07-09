@@ -280,8 +280,8 @@ NX_AllocateVideoMemory (void *bufmgr, int width, int height, int32_t planes,
   	case V4L2_PIX_FMT_YVU420M:
   	case V4L2_PIX_FMT_NV12M:
   	case V4L2_PIX_FMT_NV21M:
-	  	cStride = luStride/2;
-		  cVStride = ALIGN(height/2, 16);
+	  	cStride = luStride / 2;
+		  cVStride = ALIGN (height / 2, 16);
   		break;
 
   	case DRM_FORMAT_YUV422:
@@ -292,7 +292,7 @@ NX_AllocateVideoMemory (void *bufmgr, int width, int height, int32_t planes,
   	case V4L2_PIX_FMT_YUV422M:
 //  	case V4L2_PIX_FMT_NV16M:
 //  	case V4L2_PIX_FMT_NV61M:
-  		cStride = luStride/2;
+  		cStride = luStride / 2;
   		cVStride = luVStride;
   		break;
 
