@@ -55,23 +55,27 @@
 
 #if	DBG_FUNCTION
 #define	FUNC_IN()			GST_LOG("%s() In", __func__)
-#define	FUNC_OUT()			GST_LOG("%s() Out", __func__)
+#define	FUNC_OUT()		GST_LOG("%s() Out", __func__)
 #else
 #define	FUNC_IN()			do{}while(0)
-#define	FUNC_OUT()			do{}while(0)
+#define	FUNC_OUT()		do{}while(0)
 #endif //      DBG_FUNCTION
 
 G_BEGIN_DECLS
-#define GST_TYPE_NXVIDEODEC   (gst_nxvideodec_get_type())
-#define GST_NXVIDEODEC(obj)   (G_TYPE_CHECK_INSTANCE_CAST((obj),GST_TYPE_NXVIDEODEC,GstNxVideoDec))
-#define GST_NXVIDEODEC_CLASS(klass)   (G_TYPE_CHECK_CLASS_CAST((klass),GST_TYPE_NXVIDEODEC,GstNxVideoDecClass))
-#define GST_IS_NXVIDEODEC(obj)   (G_TYPE_CHECK_INSTANCE_TYPE((obj),GST_TYPE_NXVIDEODEC))
-#define GST_IS_NXVIDEODEC_CLASS(obj)   (G_TYPE_CHECK_CLASS_TYPE((klass),GST_TYPE_NXVIDEODEC))
+
+#define GST_TYPE_NXVIDEODEC (gst_nxvideodec_get_type())
+#define GST_NXVIDEODEC(obj) (G_TYPE_CHECK_INSTANCE_CAST((obj), GST_TYPE_NXVIDEODEC, GstNxVideoDec))
+#define GST_NXVIDEODEC_CLASS(klass) (G_TYPE_CHECK_CLASS_CAST ((klass), GST_TYPE_NXVIDEODEC, GstNxVideoDecClass))
+#define GST_IS_NXVIDEODEC(obj) (G_TYPE_CHECK_INSTANCE_TYPE((obj), GST_TYPE_NXVIDEODEC))
+#define GST_IS_NXVIDEODEC_CLASS(obj) (G_TYPE_CHECK_CLASS_TYPE((klass), GST_TYPE_NXVIDEODEC))
+
 #define USE_NATIVE_DRM_BUFFER
+
 typedef struct _GstNxVideoDec GstNxVideoDec;
 typedef struct _GstNxVideoDecClass GstNxVideoDecClass;
 typedef struct _GstNxDecOutBuffer GstNxDecOutBuffer;
 
+#include <mm_types.h>
 #include "decoder.h"
 
 struct _GstNxDecOutBuffer
@@ -86,11 +90,21 @@ struct _GstNxVideoDec
   GstVideoDecoder base_nxvideodec;
   NX_VIDEO_DEC_STRUCT *pNxVideoDecHandle;
   gint bufferType;
+  gint bDisableVideoOutReorder;
   // video state
   GstVideoCodecState *pInputState;
   gint isState;
   pthread_mutex_t mutex;
+
+	gint negoWidth;
+	gint negoHeight;
+	gint bIsCodecData;
+	gint bIsInitVideoDec;
+	gint bIsNegotiate;
+
+#ifdef TIZEN_FEATURE_ARTIK530
   GstAllocator *allocator;
+#endif
 };
 
 struct _GstNxVideoDecClass
