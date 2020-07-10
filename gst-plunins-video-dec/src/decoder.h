@@ -8,16 +8,19 @@
 #define __DECODER_H__
 
 G_BEGIN_DECLS
-#define	VID_OUTPORT_MIN_BUF_CNT					12      // Max Avaiable Frames
+#define	VID_OUTPORT_MIN_BUF_CNT		        			12      // Max Avaiable Frames
 #define	VID_OUTPORT_MIN_BUF_CNT_H264_UNDER720P	22      // ~720p
-#define	VID_OUTPORT_MIN_BUF_CNT_H264_1080P		12      // 1080p
+#define	VID_OUTPORT_MIN_BUF_CNT_H264_1080P  		12      // 1080p
+
 #define	MAX_INPUT_BUF_SIZE		(1024*1024*4)
+#define INVALID_TIMESTAMP -2
+
 //////////////////////////////////////////////////////////////////////////////
 //
 #define	NX_MAX_WIDTH		1920
 #define	NX_MAX_HEIGHT		1088
 #define	NX_MAX_BUF			32
-    enum
+enum
 {
   DEC_INIT_ERR = -1,
   DEC_ERR = -2,
@@ -85,14 +88,25 @@ struct _NX_VIDEO_DEC_STRUCT
   gboolean bFlush;
   gboolean bNeedKey;
   gboolean bNeedIframe;
-  gint imgPlaneNum;
+
+#ifdef TIZEN_FEATURE_ARTIK530
+  gint imgPlaneNum;                                           // need delete ---------------------------
+  gint tmpStrmBufIndex;                                       // need delete ---------------------------
+// Input to two frame NX_V4l2DecDecodeFrame() after seek(flush)
+  gint frameCount;                                                  // need delete -------------------------
+#endif
+
   gint pos;
   gint size;
+	gint inFlushFrameCount;
+	gint bIsFlush;
 
   //      Temporal Buffer
   guint8 *pTmpStrmBuf;
   gint tmpStrmBufSize;
-  gint tmpStrmBufIndex;
+	guint8 *pSeekTmpBuf;
+	gint seekTmpBufIndex;
+
   //      Output Timestamp
   struct OutBufferTimeInfo outTimeStamp[NX_MAX_BUF];
   gint inFlag;
@@ -104,12 +118,18 @@ struct _NX_VIDEO_DEC_STRUCT
   NX_AVCC_TYPE *pH264Info;
   gint h264Alignment;
 
-  // Input to two frame NX_V4l2DecDecodeFrame() after seek(flush)
-  gint frameCount;
+	NX_VDEC_SEMAPHORE *pSem;
 
-  gboolean bIsFlush;
+	gint 		imageFormat;
 
-  NX_VDEC_SEMAPHORE *pSem;
+	gint64		dtsTimestamp;
+	gint64		ptsTimestamp;
+
+	gint 		bDisableVideoOutReorder;
+
+	gint (*pVideoDecodeFrame) (NX_VIDEO_DEC_STRUCT *pDecHandle,
+      GstBuffer *pGstBuf, NX_V4L2DEC_OUT *pDecOut,
+      gboolean bKeyFrame);
 #ifdef TIZEN_FEATURE_ARTIK530
   GstBuffer *codec_data;
 #endif
@@ -125,16 +145,15 @@ gboolean GetExtraInfo (NX_VIDEO_DEC_STRUCT * pDecHandle, guint8 * pCodecData,
 
 //Video Decoder
 NX_VIDEO_DEC_STRUCT *OpenVideoDec ();
-gint InitVideoDec (NX_VIDEO_DEC_STRUCT * pDecHandle);
+gint InitVideoDec( NX_VIDEO_DEC_STRUCT *pDecHandle, gint bDisableVideoOutReorder);
 gint VideoDecodeFrame (NX_VIDEO_DEC_STRUCT * pDecHandle, GstBuffer * pGstBuf,
     NX_V4L2DEC_OUT * pDecOut, gboolean bKeyFrame);
 void CloseVideoDec (NX_VIDEO_DEC_STRUCT * pDecHandle);
 
 gint DisplayDone (NX_VIDEO_DEC_STRUCT * pDecHandle, gint v4l2BufferIdx);
 gint GetTimeStamp (NX_VIDEO_DEC_STRUCT * pDecHandle, gint64 * pTimestamp);
-gint CopyImageToBufferYV12 (uint8_t * pSrcY, uint8_t * pSrcU, uint8_t * pSrcV,
-    uint8_t * pDst, uint32_t strideY, uint32_t strideUV, uint32_t width,
-    uint32_t height);
+gint CopyImageToBufferYV12( NX_VIDEO_DEC_STRUCT *pDecHandle,
+    NX_VID_MEMORY_INFO *pInMemory, uint8_t *pDst );
 
 //
 //      Semaphore functions for output buffer.
