@@ -579,8 +579,12 @@ gst_nxvideodec_set_format (GstVideoDecoder * pDecoder,
 #endif
 
     pNxVideoDec->bIsCodecData = TRUE;
+		
+#ifdef TIZEN_FEATURE_ARTIK530
     videoFormat = GST_VIDEO_FORMAT_S420;
-
+#else
+    videoFormat = GST_VIDEO_FORMAT_I420;
+#endif
 
     pOutputState =
         gst_video_decoder_set_output_state (pDecoder, videoFormat,
