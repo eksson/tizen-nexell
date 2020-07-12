@@ -930,25 +930,20 @@ gst_nxvideodec_handle_frame (GstVideoDecoder * pDecoder,
     return GST_FLOW_OK;
   }
 
-
-
-
-	if (((pNxVideoDec->bIsCodecData == FALSE) &&
+  if (((pNxVideoDec->bIsCodecData == FALSE) &&
       (pNxVideoDec->bIsNegotiate == FALSE)) ||
 		  ((pNxVideoDec->negoWidth != pDecHandle->width) ||
       (pNxVideoDec->negoHeight != pDecHandle->height))) {
 		pNxVideoDec->bIsNegotiate = TRUE;
 		GstVideoCodecState *pOutputState = NULL;
+	  
+#ifdef TIZEN_FEATURE_ARTIK530
+        gint videoFormat = GST_VIDEO_FORMAT_S420;
+#else
+        gint videoFormat = GST_VIDEO_FORMAT_I420;
+#endif
 
-		gint videoFormat = GST_VIDEO_FORMAT_I420;
-
-		if (pDecHandle->bIsNX322x) {
-			videoFormat = GST_VIDEO_FORMAT_NV12;
-		} else {
-			videoFormat = GST_VIDEO_FORMAT_I420;
-		}
-
-		pOutputState = gst_video_decoder_set_output_state (pDecoder,
+        pOutputState = gst_video_decoder_set_output_state (pDecoder,
         videoFormat, pDecHandle->width, pDecHandle->height,
         pNxVideoDec->pInputState);
 
