@@ -1691,7 +1691,9 @@ VDecSemSignal (NX_VDEC_SEMAPHORE * pSem)
   FUNC_IN ();
 
   pthread_mutex_lock (&pSem->mutex);
+
   pthread_cond_signal (&pSem->cond);
+
   pthread_mutex_unlock (&pSem->mutex);
 
   FUNC_OUT ();
