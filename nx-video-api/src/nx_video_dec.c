@@ -100,14 +100,14 @@ V4l2DecOpen (void)
       snprintf (filename, 64, "/sys/class/video4linux/video%d/name", i);
       stream_fd = fopen (filename, "r");
       if (stream_fd == NULL) {
-        _D ("failed to open sysfs entry for videodev \n");
+        _E ("failed to open sysfs entry for videodev \n");
         i++;
         continue;
       }
 
       /* read sysfs entry for device name */
       if (fgets (name, sizeof (name), stream_fd) == 0) {
-        _D ("failed to read sysfs entry for videodev\n");
+        _E ("failed to read sysfs entry for videodev\n");
       } else {
         if (strncmp (name, NX_V4L2_DEC_NAME, strlen (NX_V4L2_DEC_NAME)) == 0) {
           _D ("node found for device %s: /dev/video%d \n", NX_V4L2_DEC_NAME,
@@ -786,7 +786,7 @@ NX_V4l2DecInit (NX_V4L2DEC_HANDLE hDec, NX_V4L2DEC_SEQ_IN * pSeqIn)
     } else {
       hDec->useExternalFrameBuffer = true;
       if (2 > pSeqIn->numBuffers - hDec->numFrameBuffers) {
-        _D ("External Buffer too small.(min=%d, buffers=%d)\n",
+        _E ("External Buffer too small.(min=%d, buffers=%d)\n",
             hDec->numFrameBuffers, pSeqIn->numBuffers);
         return -1;
       }
