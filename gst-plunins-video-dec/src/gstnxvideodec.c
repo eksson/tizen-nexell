@@ -308,7 +308,7 @@ gst_nxvideodec_init (GstNxVideoDec * pNxVideoDec)
   pNxVideoDec->allocator = gst_tizen_allocator_new ();
 #endif
 
-  pthread_mutex_init (&pNxVideoDec->mutex, NULL);
+//  pthread_mutex_init (&pNxVideoDec->mutex, NULL);
 
 	GST_PAD_SET_ACCEPT_TEMPLATE (GST_VIDEO_DECODER_SINK_PAD
                               (pNxVideoDec));
@@ -437,7 +437,7 @@ gst_nxvideodec_stop (GstVideoDecoder * pDecoder)
 	pNxVideoDec->bIsInitVideoDec = false;
 	pNxVideoDec->bIsNegotiate = false;
 
-  pthread_mutex_destroy (&pNxVideoDec->mutex);
+//  pthread_mutex_destroy (&pNxVideoDec->mutex);
 
   FUNC_OUT ();
   return TRUE;
