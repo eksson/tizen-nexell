@@ -392,9 +392,9 @@ gst_nxvideodec_start (GstVideoDecoder * pDecoder)
     return FALSE;
   }
 
-  pthread_mutex_lock (&pNxVideoDec->mutex);
+//  pthread_mutex_lock (&pNxVideoDec->mutex);
   pNxVideoDec->isState = PLAY;
-  pthread_mutex_unlock (&pNxVideoDec->mutex);
+//  pthread_mutex_unlock (&pNxVideoDec->mutex);
 
   FUNC_OUT ();
 
@@ -413,9 +413,9 @@ gst_nxvideodec_stop (GstVideoDecoder * pDecoder)
 
   GST_DEBUG_OBJECT (pNxVideoDec, "stop");
 
-  pthread_mutex_lock (&pNxVideoDec->mutex);
+//  pthread_mutex_lock (&pNxVideoDec->mutex);
   pNxVideoDec->isState = STOP;
-  pthread_mutex_unlock (&pNxVideoDec->mutex);
+//  pthread_mutex_unlock (&pNxVideoDec->mutex);
 
   if (pNxVideoDec->pNxVideoDecHandle->pSem) {
     VDecSemSignal (pNxVideoDec->pNxVideoDecHandle->pSem);
@@ -1124,7 +1124,7 @@ nxvideodec_buffer_finalize (gpointer pData)
   }
 
   if ((pMeta->pNxVideoDec) && (pMeta->pNxVideoDec->pNxVideoDecHandle)) {
-    pthread_mutex_lock (&pMeta->pNxVideoDec->mutex);
+//    pthread_mutex_lock (&pMeta->pNxVideoDec->mutex);
     if (PLAY == pMeta->pNxVideoDec->isState) {
       GST_DEBUG_OBJECT (pMeta->pNxVideoDec, "v4l2BufferIdx: %d\n",
           pMeta->v4l2BufferIdx);
@@ -1135,7 +1135,7 @@ nxvideodec_buffer_finalize (gpointer pData)
         GST_ERROR ("Fail: DisplayDone !");
       }
     }
-    pthread_mutex_unlock (&pMeta->pNxVideoDec->mutex);
+//    pthread_mutex_unlock (&pMeta->pNxVideoDec->mutex);
   } else {
     GST_ERROR ("Error: hCodec is null !");
   }
