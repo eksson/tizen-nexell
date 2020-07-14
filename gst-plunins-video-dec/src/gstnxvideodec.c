@@ -829,6 +829,8 @@ gst_nxvideodec_handle_frame (GstVideoDecoder * pDecoder,
 
   gst_buffer_append_memory (pGstbuf, pGstmem);
 
+#ifdef TIZEN_FEATURE_ARTIK530
+#else
 	pMemMMVideoData =
       nxvideodec_mmvideobuf_copy(&decOut,
           pNxVideoDec->pNxVideoDecHandle->imageFormat);
@@ -842,7 +844,8 @@ gst_nxvideodec_handle_frame (GstVideoDecoder * pDecoder,
 		gst_buffer_append_memory (pGstbuf, pMemMMVideoData);
 	}
 	gst_buffer_add_mmvideobuffer_meta (pGstbuf, 1);
-
+#endif
+	
   pFrame->output_buffer = pGstbuf;
 
   if (-1 == GetTimeStamp (pNxVideoDec->pNxVideoDecHandle, &timeStamp)) {
