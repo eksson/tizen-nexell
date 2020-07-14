@@ -802,6 +802,7 @@ gst_nxvideodec_handle_frame (GstVideoDecoder * pDecoder,
   pState = gst_video_decoder_get_output_state (pDecoder);
 
 #ifdef TIZEN_FEATURE_ARTIK530
+#else
   pGstmem = gst_tizen_allocator_alloc_surface (pNxVideoDec->allocator,
         &pState->info, pImg->surface, pMeta, nxvideodec_buffer_finalize);
 
